@@ -1,0 +1,167 @@
+#!/data/data/com.termux/files/usr/bin/bash
+
+FILE="$1"
+if [ -z "$FILE" ]; then
+    echo -e "\e[1;31m[!] Usage: run <filename.py|filename.js> [args...]\e[0m"
+    exit 1
+fi
+
+if [ ! -f "$FILE" ]; then
+    echo -e "\e[1;31m[!] Error: File '$FILE' not found!\e[0m"
+    exit 1
+fi
+
+# ==========================================
+# LOGGING SETUP
+# ==========================================
+BASENAME=$(basename "$FILE")
+LOG_DIR="$HOME/.run_logs/${BASENAME}"
+mkdir -p "$LOG_DIR"
+
+TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+LOG_FILE="${LOG_DIR}/run_${TIMESTAMP}.log"
+
+echo "=== Run Session Started: $(date) ===" >> "$LOG_FILE"
+echo "Target File: $FILE" >> "$LOG_FILE"
+echo "Arguments: ${*:2}" >> "$LOG_FILE"
+echo "----------------------------------------" >> "$LOG_FILE"
+
+# Smooth Spinner Animation Function
+spin() {
+    local pid=$1
+    local msg="$2"
+    local spinstr='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
+    printf "\e[?25l"
+    while kill -0 "$pid" 2>/dev/null; do
+        for (( i=0; i<${#spinstr}; i++ )); do
+            printf "\r\e[1;36m[${spinstr:$i:1}]\e[0m %s" "$msg"
+            sleep 0.08
+        done
+    done
+    wait "$pid"
+    local status=$?
+    printf "\e[?25h"
+    if [ $status -eq 0 ]; then
+        printf "\r\e[1;32m[✔]\e[0m %s \e[1;32mDone!\e[0m\n" "$msg"
+    else
+        printf "\r\e[1;31m[✘]\e[0m %s \e[1;31mFailed! (Check: %s)\e[0m\n" "$msg" "$LOG_FILE"
+    fi
+    return $status
+}
+
+EXT="${FILE##*.}"
+
+# ==========================================
+# PYTHON RUNNER
+# ==========================================
+if [ "$EXT" = "py" ]; then
+    if ! command -v python >/dev/null 2>&1; then
+        echo -e "\e[1;31m[!] Python not installed. Run: pkg install python -y\e[0m"
+        echo "[ERROR] Python runtime missing" >> "$LOG_FILE"
+        exit 1
+    fi
+
+    echo -e "\e[1;34m[*] Scanning Python dependencies for '$FILE'...\e[0m"
+
+    if [ -f "requirements.txt" ]; then
+        (pip install -r requirements.txt >> "$LOG_FILE" 2>&1) &
+        spin $! "Installing requirements.txt"
+    fi
+
+    RAW_IMPORTS=$(python -c '
+import sys, re
+target = sys.argv[1]
+with open(target, "r", errors="ignore") as f:
+    text = f.read()
+mods = set()
+for m in re.finditer(r"^\s*(?:import|from)\s+([a-zA-Z0-9_]+)", text, re.MULTILINE):
+    mods.add(m.group(1))
+for mod in sorted(mods):
+    print(mod)
+' "$FILE" 2>/dev/null)
+
+    for mod in $RAW_IMPORTS; do
+        [ -z "$mod" ] && continue
+        python -c "import $mod" > /dev/null 2>&1
+        if [ $? -ne 0 ]; then
+            PKG="$mod"
+            case "$mod" in
+                cv2) PKG="opencv-python" ;;
+                PIL) PKG="Pillow" ;;
+                bs4) PKG="beautifulsoup4" ;;
+                sklearn) PKG="scikit-learn" ;;
+                yaml) PKG="pyyaml" ;;
+            esac
+            (pip install "$PKG" >> "$LOG_FILE" 2>&1) &
+            spin $! "Installing missing pip package: $PKG"
+        fi
+    done
+
+    echo -e "\e[1;32m[▶] Launching $FILE...\e[0m\n"
+    python "$FILE" "${@:2}" 2>&1 | tee -a "$LOG_FILE"
+
+# ==========================================
+# NODE.JS RUNNER
+# ==========================================
+elif [ "$EXT" = "js" ] || [ "$EXT" = "mjs" ] || [ "$EXT" = "cjs" ]; then
+    if ! command -v node >/dev/null 2>&1; then
+        echo -e "\e[1;31m[!] Node.js not installed. Run: pkg install nodejs-lts -y\e[0m"
+        echo "[ERROR] Node runtime missing" >> "$LOG_FILE"
+        exit 1
+    fi
+
+    echo -e "\e[1;34m[*] Scanning Node.js dependencies for '$FILE'...\e[0m"
+
+    # Ensure package.json exists taaki npm install bina kisi issue ke kaam kare
+    if [ ! -f "package.json" ]; then
+        npm init -y >> "$LOG_FILE" 2>&1
+    fi
+
+    # Native Node scan script: Single quotes, double quotes, require, import sab accurately nikalta hai
+    JS_PKGS=$(node -e '
+const fs = require("fs");
+const file = process.argv[1];
+const text = fs.readFileSync(file, "utf8");
+const pkgs = new Set();
+const reg = /(?:require\s*\(\s*["'\''"]([^"'\''"]+)["'\''"]\s*\)|from\s+["'\''"]([^"'\''"]+)["'\''"])/g;
+let m;
+while ((m = reg.exec(text)) !== null) {
+    const raw = m[1] || m[2];
+    if (raw && !raw.startsWith(".") && !raw.startsWith("/")) {
+        const parts = raw.split("/");
+        const base = raw.startsWith("@") ? parts[0] + "/" + parts[1] : parts[0];
+        pkgs.add(base);
+    }
+}
+const builtins = new Set(["fs","path","http","https","os","crypto","child_process","stream","util","events","url","zlib","buffer","net","tls","readline","dns","assert"]);
+for (const p of pkgs) {
+    if (!builtins.has(p)) console.log(p);
+}
+' "$FILE" 2>/dev/null)
+
+    for mod in $JS_PKGS; do
+        [ -z "$mod" ] && continue
+
+        # Local directory check
+        node -e "require.resolve('$mod', { paths: [process.cwd()] })" > /dev/null 2>&1
+        if [ $? -ne 0 ]; then
+            (npm install "$mod" >> "$LOG_FILE" 2>&1) &
+            spin $! "Installing missing npm package: $mod"
+        fi
+    done
+
+    echo -e "\e[1;32m[▶] Launching $FILE...\e[0m\n"
+    node "$FILE" "${@:2}" 2>&1 | tee -a "$LOG_FILE"
+
+# ==========================================
+# UNSUPPORTED FORMAT
+# ==========================================
+else
+    echo -e "\e[1;31m[!] Unsupported file type: .$EXT\e[0m"
+    echo "[ERROR] Unsupported extension: .$EXT" >> "$LOG_FILE"
+    exit 1
+fi
+
+echo -e "\n----------------------------------------" >> "$LOG_FILE"
+echo "=== Session Closed: $(date) ===" >> "$LOG_FILE"
+
