@@ -131,10 +131,14 @@ rm -rf ~/termux-dotfiles
 
 ## 📸 Screenshots
 
-> _Coming soon — prompt, banner, aur `run` engine ka demo._
+### 🖥️ Kali-Style Prompt & Banner
+<img src="screenshots/prompt.png" width="750" alt="ANAND.OS Kali-style 2-line root prompt with ASCII banner">
 
----
+### 🐍 Python Runner in Action
+<img src="screenshots/python.png" width="750" alt="run demo.py auto-installing requests, bs4 and colorama with braille spinner">
 
+### 🟢 Node.js Runner in Action
+<img src="screenshots/js.png" width="750" alt="run demo.js auto-installing dotenv and dayjs while skipping core modules">
 ## 📄 License
 
 MIT © [Anand Sharma](https://github.com/desianandyt)
