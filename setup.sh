@@ -6,6 +6,9 @@ echo -e "\e[1;34m[*] Restoring Anand's Custom Termux Environment...\e[0m"
 pkg update -y && pkg upgrade -y
 pkg install -y git python nodejs-lts figlet toilet ncurses-utils
 
+# Install lolcat via pip (fixes 'No command lolcat found')
+pip install lolcat
+
 # Restore Runner Binary
 mkdir -p $PREFIX/bin
 cp run $PREFIX/bin/run
