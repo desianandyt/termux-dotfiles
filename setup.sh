@@ -28,4 +28,8 @@ fi
 rm -f "$PREFIX/etc/motd"
 
 echo -e "\n\e[1;32m[✔] Setup restored successfully!\e[0m"
-echo -e "\e[1;36m[!] Restart Termux or run: source ~/.bashrc\e[0m\n"
+echo -e "\e[1;36m[*] Auto-reloading Termux environment...\e[0m\n"
+sleep 1
+
+# Restart current shell into a fresh login shell
+exec bash -l
