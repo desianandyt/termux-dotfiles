@@ -1,18 +1,16 @@
 
 <div align="center">
+⚡ ANAND.OS // TERMUX DOTFILES ⚡
+Automated CLI Environment • Kali Root Shell • Dynamic Dependency Runner
+Termux
 
-# ⚡ ANAND.OS // TERMUX DOTFILES ⚡
-### *Automated CLI Environment • Kali Root Shell • Dynamic Dependency Runner*
+Python
 
-[![Termux](https://img.shields.io/badge/Platform-Termux-black?style=for-the-badge&logo=gnu-bash&logoColor=green)](https://termux.dev)
-[![Python](https://img.shields.io/badge/Python-3.x-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
-[![NodeJS](https://img.shields.io/badge/Node.js-LTS-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org)
-[![Shell](https://img.shields.io/badge/Bash-Shell-4EAA25?style=for-the-badge&logo=gnubash&logoColor=white)](#)
-[![Status](https://img.shields.io/badge/Status-Operational-brightgreen?style=for-the-badge)](#)
+NodeJS
 
----
+Shell
 
-```text
+Status
     ___    _   __ ___     _   __ ____ 
    /   |  / | / //   |   / | / // __ \
   / /| | /  |/ // /| |  /  |/ // / / /
@@ -25,7 +23,7 @@
 </div>
 🚀 1-Command Deployment
 Termux install karte hi yeh single command run karein:
-pkg install -y git && git clone [https://github.com/desianandyt/termux-dotfiles.git](https://github.com/desianandyt/termux-dotfiles.git) ~/termux-dotfiles && bash ~/termux-dotfiles/setup.sh
+pkg install -y git && git clone https://github.com/desianandyt/termux-dotfiles.git ~/termux-dotfiles && bash ~/termux-dotfiles/setup.sh
 
 > Automated Workflow: Setup packages install karega, files link karega, aur session ko auto-reload karke fresh Kali shell me land kar dega.
 > 
