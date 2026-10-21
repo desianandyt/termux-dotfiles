@@ -1,4 +1,4 @@
-```markdown
+
 <div align="center">
 
 # ⚡ ANAND.OS // TERMUX DOTFILES ⚡
@@ -148,4 +148,4 @@ MIT © [Anand Sharma](https://github.com/desianandyt)
 _Code. Break. Build. Repeat._
 
 </div>
-```
+
